@@ -1,0 +1,52 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  passwordHash  String   @map("password_hash")
+  role          String
+  walletAddress String   @map("wallet_address")
+  createdAt     DateTime @default(now()) @map("created_at")
+  batches       Batch[]
+
+  @@map("users")
+}
+
+model Batch {
+  id               Int                @id @default(autoincrement())
+  productName      String             @map("product_name")
+  origin           String
+  batchIdentifier  String             @unique @map("batch_identifier")
+  createdBy        Int                @map("created_by")
+  creator          User               @relation(fields: [createdBy], references: [id])
+  blockchainTxHash String?            @map("blockchain_tx_hash")
+  plantingDate     String?            @map("planting_date")
+  harvestDate      String?            @map("harvest_date")
+  fertilizerUsed   String?            @map("fertilizer_used")
+  createdAt        DateTime           @default(now()) @map("created_at")
+  events           SupplyChainEvent[]
+
+  @@map("batches")
+}
+
+model SupplyChainEvent {
+  id          Int      @id @default(autoincrement())
+  batchId     Int      @map("batch_id")
+  batch       Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  stage       String
+  actorWallet String   @map("actor_wallet")
+  txHash      String   @map("tx_hash")
+  details     String?  // Store JSON-serialized details of the event
+  timestamp   DateTime
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("supply_chain_events")
+}
